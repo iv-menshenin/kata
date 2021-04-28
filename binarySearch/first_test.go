@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"math/rand"
-	"strconv"
+	"sort"
 	"testing"
 	"time"
 )
@@ -181,26 +181,29 @@ func Test_find1(t *testing.T) {
 }
 
 func Test_find1_brutForce(t *testing.T) {
+	const (
+		testCount  = 100
+		itemsCount = 10000
+	)
 	var (
-		a     = make([]int, 0, 1000)
+		a     = make([]int, 0, itemsCount)
 		tests = make(map[int]int)
 	)
 	for i := 0; i < cap(a); i++ {
-		a = append(a, i*3)
+		a = append(a, rand.Int())
 	}
-	for i := 0; i < 10; i++ {
+	sort.Ints(a)
+	for i := 0; i < testCount; i++ {
 		idx := rand.Intn(cap(a))
 		tests[i] = idx
 	}
-	for k, v := range tests {
-		t.Run(strconv.Itoa(k), func(t *testing.T) {
-			var iterCount uint32
-			if got := find1(a, a[v], &iterCount); got != v {
-				t.Errorf("find1() = %v, want %v", got, v)
-			}
-			println(fmt.Sprintf("#%d: %d", k, iterCount))
-		})
+	var iterCount uint32
+	for _, v := range tests {
+		if got := find1(a, a[v], &iterCount); a[got] != a[v] {
+			t.Errorf("find1() = %v, want %v", got, v)
+		}
 	}
+	println(fmt.Sprintf("average ticks: %d\ncomplexity: %s", iterCount/testCount, testComplexity(itemsCount, int(iterCount/testCount))))
 }
 
 func Benchmark_find1(b *testing.B) {
@@ -209,8 +212,9 @@ func Benchmark_find1(b *testing.B) {
 		tests = make(map[int]int)
 	)
 	for i := 0; i < cap(a); i++ {
-		a = append(a, i)
+		a = append(a, rand.Int())
 	}
+	sort.Ints(a)
 	tests[1] = 600
 	tests[2] = 1
 	tests[3] = 998
@@ -218,7 +222,7 @@ func Benchmark_find1(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		for _, v := range tests {
-			if got := find1(a, v); got != v {
+			if got := find1(a, a[v]); a[got] != a[v] {
 				b.Errorf("find1() = %v, want %v", got, v)
 			}
 		}

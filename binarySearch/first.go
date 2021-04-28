@@ -2,6 +2,9 @@ package main
 
 import "sync/atomic"
 
+// find1 will search for an integer value in an sorted array.
+//
+// the complexity of the algorithm is O(log n)
 func find1(a []int, f int, iter ...*uint32) int {
 	tick := func() {}
 	if len(iter) > 0 {

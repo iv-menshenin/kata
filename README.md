@@ -25,3 +25,6 @@ I didn’t get a job with this company, I chose another one that doesn’t scare
 However, I liked the task for its complexity and simplicity at the same time.
 
 I present two solutions to this problem. Both solutions are correct but one of them leads to data copying, and the other saves memory but changes the original data so that it can no longer be used.
+
+## Binary search
+Binary search algorithm written in different ways. In progress...

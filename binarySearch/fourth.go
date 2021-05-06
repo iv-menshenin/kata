@@ -5,8 +5,8 @@ import (
 	"sync/atomic"
 )
 
-// find1 will search for an integer value in an sorted array.
-// implementation of the algorithm is simplified by using tail recursion
+// find4 will search for an integer value in an sorted array.
+//
 func find4(a []int, i int) int {
 	return find4internal(a, i, 0)
 }

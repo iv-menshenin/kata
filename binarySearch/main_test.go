@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	testCount  = 100
+	testCount  = 1000
 	itemsCount = 100000
 )
 
@@ -411,6 +411,13 @@ func goTestFind(t *testing.T, findFn func([]int, int) int) {
 	}
 }
 
+func getArr(a []int, i int) interface{} {
+	if i > 0 && len(a) > i {
+		return a[i]
+	}
+	return "unknown"
+}
+
 func goTestBrutForce(t *testing.T, findFn func([]int, int, ...*uint32) int) {
 	var (
 		a      = make([]int, 0, itemsCount)
@@ -460,7 +467,7 @@ func goTestSimilarValues(t *testing.T, findFn func([]int, int, ...*uint32) int) 
 	}
 	var iterCount uint32
 	for _, v := range tests {
-		if got := findFn(a, a[v], &iterCount); a[got] != a[v] {
+		if got := findFn(a, a[v], &iterCount); got < 0 || a[got] != a[v] {
 			t.Errorf("find() = %v, want %v", got, v)
 		}
 	}
@@ -490,8 +497,8 @@ func goTestEntropic(t *testing.T, findFn func([]int, int, ...*uint32) int) {
 	sort.Ints(a)
 	var iterCount uint32
 	for _, v := range tests {
-		if got := findFn(a, v, &iterCount); a[got] != v {
-			t.Errorf("find() = %v, want %v", a[got], v)
+		if got := findFn(a, v, &iterCount); got < 0 || a[got] != v {
+			t.Errorf("find() = %v, want %v", getArr(a, got), v)
 		}
 	}
 	println(fmt.Sprintf("average ticks: %d\ncomplexity: %s", iterCount/testCount, testComplexity(itemsCount, int(iterCount/testCount))))

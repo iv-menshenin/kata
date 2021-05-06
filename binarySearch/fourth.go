@@ -1,12 +1,12 @@
 package main
 
 import (
-	"math"
 	"sync/atomic"
 )
 
 // find4 will search for an integer value in an sorted array.
 //
+// the algorithm uses a fibonacci number to split the array into pieces
 func find4(a []int, i int) int {
 	return find4internal(a, i, 0)
 }
@@ -16,10 +16,11 @@ func find4internal(a []int, i, offset int, iter ...*uint32) int {
 		return -1
 	}
 	var (
-		curr = 0
-		prev = 0
-		maxi = len(a) - 1
-		step = int(math.Sqrt(float64(len(a))))
+		curr         = 0
+		prev         = 0
+		maxi         = len(a) - 1
+		step1, step2 = 1, 1
+		mul          = len(a)/11 + 1
 	)
 	for {
 		if len(iter) > 0 {
@@ -30,10 +31,10 @@ func find4internal(a []int, i, offset int, iter ...*uint32) int {
 		}
 		if a[curr] < i && curr < maxi {
 			prev = curr
-			if curr += step; curr > maxi {
+			if curr += (step1 + step2) * mul; curr > maxi {
 				curr = maxi
 			}
-			step *= 2
+			step1, step2 = step2, step1+step2
 		} else {
 			break
 		}

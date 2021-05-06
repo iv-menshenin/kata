@@ -206,6 +206,58 @@ func Test_find1_brutForce(t *testing.T) {
 	println(fmt.Sprintf("average ticks: %d\ncomplexity: %s", iterCount/testCount, testComplexity(itemsCount, int(iterCount/testCount))))
 }
 
+func Test_find1_similarValues(t *testing.T) {
+	const (
+		testCount  = 100
+		itemsCount = 10000
+	)
+	var (
+		a     = make([]int, 0, itemsCount)
+		tests = make(map[int]int)
+	)
+	for i := 0; i < cap(a); i++ {
+		a = append(a, rand.Intn(66))
+	}
+	sort.Ints(a)
+	for i := 0; i < testCount; i++ {
+		idx := rand.Intn(cap(a))
+		tests[i] = idx
+	}
+	var iterCount uint32
+	for _, v := range tests {
+		if got := find1(a, a[v], &iterCount); a[got] != a[v] {
+			t.Errorf("find1() = %v, want %v", got, v)
+		}
+	}
+	println(fmt.Sprintf("average ticks: %d\ncomplexity: %s", iterCount/testCount, testComplexity(itemsCount, int(iterCount/testCount))))
+}
+
+func Test_find1_entropy(t *testing.T) {
+	const (
+		testCount  = 100
+		itemsCount = 10000
+	)
+	var (
+		a     = make([]int, 0, itemsCount)
+		tests = make(map[int]int)
+	)
+	for i := 0; i < cap(a); i++ {
+		a = append(a, rand.Intn(100))
+	}
+	for i := 0; i < testCount; i++ {
+		tests[i] = rand.Int()
+		a = append(a, tests[i])
+	}
+	sort.Ints(a)
+	var iterCount uint32
+	for _, v := range tests {
+		if got := find1(a, v, &iterCount); a[got] != v {
+			t.Errorf("find1() = %v, want %v", a[got], v)
+		}
+	}
+	println(fmt.Sprintf("average ticks: %d\ncomplexity: %s", iterCount/testCount, testComplexity(itemsCount, int(iterCount/testCount))))
+}
+
 func Benchmark_find1(b *testing.B) {
 	var (
 		a     = make([]int, 0, 1000)

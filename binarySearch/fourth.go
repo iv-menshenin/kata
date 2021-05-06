@@ -20,8 +20,10 @@ func find4internal(a []int, i, offset int, iter ...*uint32) int {
 		prev         = 0
 		maxi         = len(a) - 1
 		step1, step2 = 1, 1
-		mul          = len(a)/11 + 1
 	)
+	if curr > maxi {
+		curr = maxi
+	}
 	for {
 		if len(iter) > 0 {
 			atomic.AddUint32(iter[0], 1)
@@ -31,7 +33,7 @@ func find4internal(a []int, i, offset int, iter ...*uint32) int {
 		}
 		if a[curr] < i && curr < maxi {
 			prev = curr
-			if curr += (step1 + step2) * mul; curr > maxi {
+			if curr += step1 + step2; curr > maxi {
 				curr = maxi
 			}
 			step1, step2 = step2, step1+step2
@@ -42,7 +44,7 @@ func find4internal(a []int, i, offset int, iter ...*uint32) int {
 	if curr == prev {
 		return -1
 	} else {
-		a = a[prev+1 : curr]
-		return find4internal(a, i, offset+prev+1, iter...)
+		a = a[prev:curr]
+		return find4internal(a, i, offset+prev, iter...)
 	}
 }

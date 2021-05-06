@@ -1,10 +1,18 @@
 package main
 
 import (
+	"fmt"
 	"math/rand"
 	"reflect"
+	"sort"
 	"strconv"
 	"testing"
+	"time"
+)
+
+const (
+	testCount  = 100
+	itemsCount = 100000
 )
 
 func Test_entities_Mid(t *testing.T) {
@@ -229,4 +237,286 @@ func Test_sortedEntities_Find(t *testing.T) {
 		})
 	}
 	// fmt.Printf("%+v", collection.entities[180:190])
+}
+
+func goTestFind(t *testing.T, findFn func([]int, int) int) {
+	type args struct {
+		a []int
+		f int
+	}
+	tests := []struct {
+		name string
+		args args
+		want int
+	}{
+		{
+			name: "midden 1",
+			args: args{
+				a: []int{0, 1, 2, 3, 5, 7, 11, 13, 17, 21},
+				f: 7,
+			},
+			want: 5,
+		},
+		{
+			name: "midden 2",
+			args: args{
+				a: []int{0, 1, 2, 3, 5, 7, 11, 13, 17, 21},
+				f: 17,
+			},
+			want: 8,
+		},
+		{
+			name: "midden 3",
+			args: args{
+				a: []int{0, 1, 2, 3, 5, 7, 11, 13, 17, 21},
+				f: 2,
+			},
+			want: 2,
+		},
+		{
+			name: "first 1",
+			args: args{
+				a: []int{0, 1, 2, 3, 5, 7, 11, 13, 17, 21},
+				f: 0,
+			},
+			want: 0,
+		},
+		{
+			name: "first 2",
+			args: args{
+				a: []int{0, 1, 2, 3, 5, 7, 11, 13, 17},
+				f: 0,
+			},
+			want: 0,
+		},
+		{
+			name: "first 3",
+			args: args{
+				a: []int{0, 1, 2, 3, 5, 7, 11, 13},
+				f: 0,
+			},
+			want: 0,
+		},
+		{
+			name: "last 1",
+			args: args{
+				a: []int{0, 1, 2, 3, 5, 7, 11, 13, 17, 21},
+				f: 21,
+			},
+			want: 9,
+		},
+		{
+			name: "last 2",
+			args: args{
+				a: []int{0, 1, 2, 3, 5, 7, 11, 13, 17},
+				f: 17,
+			},
+			want: 8,
+		},
+		{
+			name: "last 3",
+			args: args{
+				a: []int{0, 1, 2, 3, 5, 7, 11, 13},
+				f: 13,
+			},
+			want: 7,
+		},
+		{
+			name: "nil array",
+			args: args{
+				a: nil,
+				f: 13,
+			},
+			want: -1,
+		},
+		{
+			name: "empty array",
+			args: args{
+				a: []int{},
+				f: 13,
+			},
+			want: -1,
+		},
+		{
+			name: "short array 1",
+			args: args{
+				a: []int{1},
+				f: 1,
+			},
+			want: 0,
+		},
+		{
+			name: "short array 2",
+			args: args{
+				a: []int{1, 2},
+				f: 1,
+			},
+			want: 0,
+		},
+		{
+			name: "short array 3",
+			args: args{
+				a: []int{1, 2},
+				f: 2,
+			},
+			want: 1,
+		},
+		{
+			name: "short array 4",
+			args: args{
+				a: []int{1, 2, 3},
+				f: 3,
+			},
+			want: 2,
+		},
+		{
+			name: "not found 1",
+			args: args{
+				a: []int{1, 2, 3},
+				f: 6,
+			},
+			want: -1,
+		},
+		{
+			name: "not found 2",
+			args: args{
+				a: []int{1, 2, 4, 5},
+				f: 3,
+			},
+			want: -1,
+		},
+		{
+			name: "not found 3",
+			args: args{
+				a: []int{1},
+				f: 6,
+			},
+			want: -1,
+		},
+		{
+			name: "not found 4",
+			args: args{
+				a: []int{1, 10, 100, 1000},
+				f: 60,
+			},
+			want: -1,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := findFn(tt.args.a, tt.args.f); got != tt.want {
+				t.Errorf("find() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func goTestBrutForce(t *testing.T, findFn func([]int, int, ...*uint32) int) {
+	var (
+		a      = make([]int, 0, itemsCount)
+		tests1 = make(map[int]int)
+		tests2 = make([]int, 0, testCount)
+	)
+	for i := 0; i < cap(a); i++ {
+		a = append(a, rand.Int())
+	}
+	sort.Ints(a)
+	for i := 0; i < testCount/2; i++ {
+		idx := rand.Intn(cap(a))
+		tests1[i] = idx
+		nf := a[idx] + 1
+		for {
+			if idx > len(a)-2 || a[idx+1] > nf {
+				break
+			}
+			nf++
+		}
+		tests2 = append(tests2, nf)
+	}
+	var iterCount uint32
+	for i, v := range tests1 {
+		if got := findFn(a, a[v], &iterCount); got < 0 || a[got] != a[v] {
+			t.Errorf("find() = %v, want %v", got, v)
+		}
+		if got := findFn(a, tests2[i], &iterCount); got > -1 {
+			t.Errorf("find() = %v, want -1", got)
+		}
+	}
+	println(fmt.Sprintf("average ticks: %d\ncomplexity: %s", iterCount/testCount, testComplexity(itemsCount, int(iterCount/testCount))))
+}
+
+func goTestSimilarValues(t *testing.T, findFn func([]int, int, ...*uint32) int) {
+	var (
+		a     = make([]int, 0, itemsCount)
+		tests = make(map[int]int)
+	)
+	for i := 0; i < cap(a); i++ {
+		a = append(a, rand.Intn(100))
+	}
+	sort.Ints(a)
+	for i := 0; i < testCount; i++ {
+		idx := rand.Intn(cap(a))
+		tests[i] = idx
+	}
+	var iterCount uint32
+	for _, v := range tests {
+		if got := findFn(a, a[v], &iterCount); a[got] != a[v] {
+			t.Errorf("find() = %v, want %v", got, v)
+		}
+	}
+	println(fmt.Sprintf("average ticks: %d\ncomplexity: %s", iterCount/testCount, testComplexity(itemsCount, int(iterCount/testCount))))
+}
+
+func goTestEntropic(t *testing.T, findFn func([]int, int, ...*uint32) int) {
+	var (
+		a      = make([]int, 0, itemsCount)
+		tests  = make(map[int]int)
+		offset = rand.Int()
+	)
+	for i := 0; i < cap(a)/3; i++ {
+		a = append(a, rand.Intn(1000))
+	}
+	for i := 0; i < cap(a)/3; i++ {
+		a = append(a, rand.Intn(1000)+offset)
+	}
+	offset = rand.Int()
+	for i := len(a); i < cap(a); i++ {
+		a = append(a, rand.Intn(1000)+offset)
+	}
+	for i := 0; i < testCount; i++ {
+		tests[i] = rand.Int()
+		a = append(a, tests[i])
+	}
+	sort.Ints(a)
+	var iterCount uint32
+	for _, v := range tests {
+		if got := findFn(a, v, &iterCount); a[got] != v {
+			t.Errorf("find() = %v, want %v", a[got], v)
+		}
+	}
+	println(fmt.Sprintf("average ticks: %d\ncomplexity: %s", iterCount/testCount, testComplexity(itemsCount, int(iterCount/testCount))))
+}
+
+func goBenchmarkFind(b *testing.B, findFn func([]int, int) int) {
+	var (
+		a     = make([]int, 0, 1000)
+		tests = make(map[int]int, b.N)
+	)
+	for i := 0; i < cap(a); i++ {
+		a = append(a, rand.Int())
+	}
+	sort.Ints(a)
+	for i := 0; i < b.N; i++ {
+		tests[i] = rand.Intn(len(a))
+	}
+	b.ResetTimer()
+	for _, v := range tests {
+		if got := findFn(a, a[v]); got != v {
+			b.Errorf("find() = %v, want %v", got, v)
+		}
+	}
+}
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
 }

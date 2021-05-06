@@ -27,4 +27,27 @@ However, I liked the task for its complexity and simplicity at the same time.
 I present two solutions to this problem. Both solutions are correct but one of them leads to data copying, and the other saves memory but changes the original data so that it can no longer be used.
 
 ## Binary search
-Binary search algorithm written in different ways. In progress...
+Binary search algorithm written in different ways.
+### find1
+It seemed to me that this is the simplest way of implementation that immediately comes to mind.
+I split the array into two parts in each iteration until the desired number appears in the middle of the array.
+
+A certain problem when reading the code is created by several consecutive conditional operators with other conditional operators nested inside.
+### find2
+This is a sophisticated version of the first algorithm.
+The division of the array is performed taking into account the values of the boundary elements of the array.
+The algorithm can achieve very high performance if the values in the array are evenly distributed.
+
+As in the first case, it is quite difficult to perceive the code here, and there is also more mathematics, which also does not facilitate the algorithm.
+### find3
+This code is much easier to read thanks to the recursion.
+I am using tail recursion to avoid wasting resources.
+
+Despite the fact that the logic remains the same, this code is much easier to read.
+The only remaining difficulty is `mid + 1` math.
+### find4
+This function is resource intensive compared to the others, and in addition, it is even more difficult to read, since it contains iteration and recursion and complicated mathematics.
+Dividing an array into blocks performs a Fibonacci series.
+The progression is rather weak, so a full traversal of the array takes relatively longer than in other cases.
+In fact, this algorithm is not competitive and cannot be used.
+

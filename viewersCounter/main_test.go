@@ -195,29 +195,25 @@ func Test_calculateMaxViewers1(t *testing.T) {
 
 func Benchmark_calculateMax1Viewers(b *testing.B) {
 	rand.Seed(time.Now().UnixNano())
-	var ses = make(viewSessions, 1000000, 1000000)
+	var ses = make(viewSessions, b.N, b.N)
 	for i := 0; i < len(ses); i++ {
 		ses[i].start = rand.Int63n(1000000)
 		ses[i].end = ses[i].start + rand.Int63n(1000000)
 	}
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		var evt = normalizeViewActions(ses)
-		calculateMaxViewers1(evt)
-	}
+	var evt = normalizeViewActions(ses)
+	calculateMaxViewers1(evt)
 }
 
 func Benchmark_calculateMax2Viewers(b *testing.B) {
 	rand.Seed(time.Now().UnixNano())
-	var ses = make(viewSessions, 1000000, 1000000)
+	var ses = make(viewSessions, b.N, b.N)
 	for i := 0; i < len(ses); i++ {
 		ses[i].start = rand.Int63n(1000000)
 		ses[i].end = ses[i].start + rand.Int63n(1000000)
 	}
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		calculateMaxViewers2(ses)
-	}
+	calculateMaxViewers2(ses)
 }
 
 func Test_calculateMaxViewers2(t *testing.T) {

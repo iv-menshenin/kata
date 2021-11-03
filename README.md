@@ -51,3 +51,29 @@ Dividing an array into blocks performs a Fibonacci series.
 The progression is rather weak, so a full traversal of the array takes relatively longer than in other cases.
 In fact, this algorithm is not competitive and cannot be used.
 
+## Is Contains a Pair
+Given: an array of integers from 0 to 1000, the length of the array is no more than 500 values.
+You need to bypass the array and find a pair of numbers in which one number is twice as big as the other.
+
+```
+i != j
+0 <= i, j < arr.length
+arr[i] == 2 * arr[j]
+2 <= arr.length <= 500
+0 <= arr[i] <= 10^3
+```
+I confess that in the interview I performed the worst implementation possible.
+In a stressful situation, I tend to make wrong decisions and didn't take into account that we have small values and a small array size.
+In this case, it is better to operate with `slice` rather than `map`. Here are the results of the benchmarks:
+
+```
+cpu: Intel(R) Core(TM) i7-9700F CPU @ 3.00GHz
+Benchmark_byArraySlow
+Benchmark_byArraySlow-8   	 2718829	       613.0 ns/op	       0 B/op	       0 allocs/op
+Benchmark_byMap
+Benchmark_byMap-8         	   84037	     20058 ns/op	   10928 B/op	       3 allocs/op
+Benchmark_byIntArr
+Benchmark_byIntArr-8      	10659265	       113.0 ns/op	       0 B/op	       0 allocs/op
+Benchmark_byMap2
+Benchmark_byMap2-8        	  535474	      7657 ns/op	   10904 B/op	       2 allocs/op
+```

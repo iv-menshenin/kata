@@ -51,7 +51,7 @@ func byMap2(arr []int) bool {
 }
 
 func byIntArr(arr []int) bool {
-	var ia = make([]int, 1001)
+	var ia [1001]int
 	for _, i := range arr {
 		if ia[i] == 2 {
 			return true

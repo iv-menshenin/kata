@@ -95,3 +95,17 @@ main.go:53:15: arr does not escape
 Do you see that on line 23, the data escape into a heap? That was my mistake.
 The implementation with an array of 1001 elements showed better results, which is not surprising at all,
 because its cyclomatic complexity is O(n) and there are no allocations and all data are on the stack.
+
+## Optimization
+Everyone probably already knows that if you know the boundaries of an array (slice) beforehand, it is very effective to specify the necessary amount of elements when declaring it.
+However, not every time we apply this, for any other buffered data structures, in my example bytes.Buffer declared without
+a pre-created memory buffer, the first time we try to write to it, causes an allocation in memory in the procedure bytes.(*Buffer).grow().
+
+Note the effect on performance of creating a variable with at least a minimum initial buffer. This is probably because the bytes.NewBuffer function call was compiled as inline, so the buffer does not escape from its stack frame. This allows the runtime to allocate the necessary amount of memory on the stack in advance. And it does not cause allocation in the heap.
+```
+cpu: Intel(R) Core(TM) i7-9700F CPU @ 3.00GHz
+BenchmarkLength1
+BenchmarkLength1-8   	41940806	        61.58 ns/op	      64 B/op	       1 allocs/op
+BenchmarkLength2
+BenchmarkLength2-8   	115965088	        10.21 ns/op	       0 B/op	       0 allocs/op
+```

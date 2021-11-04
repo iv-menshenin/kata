@@ -77,3 +77,21 @@ Benchmark_byIntArr-8      	10659265	       113.0 ns/op	       0 B/op	       0 al
 Benchmark_byMap2
 Benchmark_byMap2-8        	  535474	      7657 ns/op	   10904 B/op	       2 allocs/op
 ```
+I will now try to figure out what happens to the variables in this code:  
+`go tool compile -m main.go`
+
+```
+main.go:11:6: can inline byArraySlow
+main.go:23:11: inlining call to sort.Ints
+main.go:11:18: arr does not escape
+main.go:22:12: leaking param: arr
+main.go:23:11: sort.Interface(sort.IntSlice(sort.x)) escapes to heap
+main.go:24:14: make(map[int]struct {}, len(arr)) does not escape
+main.go:37:13: arr does not escape
+main.go:38:15: make(map[int]struct {}, len(arr)) does not escape
+main.go:53:15: arr does not escape
+```
+
+Do you see that on line 23, the data escape into a heap? That was my mistake.
+The implementation with an array of 1001 elements showed better results, which is not surprising at all,
+because its cyclomatic complexity is O(n) and there are no allocations and all data are on the stack.

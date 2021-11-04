@@ -56,7 +56,6 @@ func byIntArr(arr []int) bool {
 		if ia[i] == 2 {
 			return true
 		}
-		ia[i] = 1
 		if i <= 500 {
 			ia[i*2] = 2
 		}

@@ -33,8 +33,13 @@ func testHelper(t *testing.T, f func([]int) bool) {
 		want bool
 	}{
 		{
-			name: "border",
-			args: args{arr: []int{0, 1}},
+			name: "border-1",
+			args: args{arr: []int{1, 0}},
+			want: false,
+		},
+		{
+			name: "border-2",
+			args: args{arr: []int{3, 1}},
 			want: false,
 		},
 		{

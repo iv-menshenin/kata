@@ -1,6 +1,9 @@
 package dijkstra
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+)
 
 const zero = 0
 
@@ -23,19 +26,25 @@ var testData = [][]int{
 
 func TestPathFinder_GetPath(t *testing.T) {
 	var pFinder = New(testData)
-	if cost := pFinder.GetPath(0, 10); cost != 70 {
+	if cost, path := pFinder.GetPath(0, 10); cost != 70 {
 		t.Errorf("expected 70, got: %d", cost)
+	} else if !reflect.DeepEqual(path, []int{0, 1, 2, 5, 13, 12, 10}) {
+		t.Errorf("wrong path: %v", path)
 	}
-	if cost := pFinder.GetPath(0, 11); cost != 61 {
+	if cost, path := pFinder.GetPath(0, 11); cost != 61 {
 		t.Errorf("expected 62, got: %d", cost)
+	} else if !reflect.DeepEqual(path, []int{0, 1, 2, 5, 13, 12, 11}) {
+		t.Errorf("wrong path: %v", path)
 	}
-	if cost := pFinder.GetPath(0, 4); cost != 36 {
+	if cost, path := pFinder.GetPath(0, 4); cost != 36 {
 		t.Errorf("expected 36, got: %d", cost)
+	} else if !reflect.DeepEqual(path, []int{0, 1, 2, 3, 4}) {
+		t.Errorf("wrong path: %v", path)
 	}
-	if cost := pFinder.GetPath(0, 0); cost != infinity {
+	if cost, _ := pFinder.GetPath(0, 0); cost != infinity {
 		t.Errorf("expected infinity, got: %d", cost)
 	}
-	if cost := pFinder.GetPath(11, 8); cost != infinity {
+	if cost, _ := pFinder.GetPath(11, 8); cost != infinity {
 		t.Errorf("expected infinity, got: %d", cost)
 	}
 }
@@ -44,10 +53,10 @@ func Benchmark_PathFinder_GetPath(b *testing.B) {
 	var pFinder = New(testData)
 	b.ResetTimer()
 	for i := 0; i < b.N; i += 2 {
-		if cost := pFinder.GetPath(0, 11); cost != 61 {
+		if cost, _ := pFinder.GetPath(0, 11); cost != 61 {
 			b.Errorf("expected 62, got: %d", cost)
 		}
-		if cost := pFinder.GetPath(0, 10); cost != 70 {
+		if cost, _ := pFinder.GetPath(0, 10); cost != 70 {
 			b.Errorf("expected 70, got: %d", cost)
 		}
 	}

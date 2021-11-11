@@ -3,6 +3,7 @@ package dijkstra
 type (
 	PathFinder struct {
 		geo      [][]int
+		paths    [][]int
 		explored []bool
 	}
 )
@@ -12,8 +13,11 @@ const (
 	infinity  = -1
 )
 
-func (p *PathFinder) GetPath(from, to int) int {
+func (p *PathFinder) GetPath(from, to int) (int, []int) {
 	p.explored = make([]bool, len(p.geo))
+	for i := 0; i < len(p.paths); i++ {
+		p.paths[i] = make([]int, 0, len(p.geo))
+	}
 	var current = from
 	var currentCost = 0
 	var canContinue bool
@@ -21,21 +25,26 @@ func (p *PathFinder) GetPath(from, to int) int {
 	for {
 		p.explored[current] = true
 		exploration := p.explorePath(current)
-		uncovered = p.mergeExplorations(uncovered, exploration, currentCost)
+		uncovered = p.mergeExplorations(uncovered, exploration, currentCost, current)
 		current, currentCost, canContinue = p.nextNode(uncovered)
 		if !canContinue {
 			break
 		}
 	}
 	if to < len(uncovered) {
-		return uncovered[to]
+		return uncovered[to], p.paths[to]
 	}
-	return infinity
+	return infinity, nil
 }
 
-func (p *PathFinder) mergeExplorations(old, new []int, currentCost int) []int {
+func (p *PathFinder) mergeExplorations(old, new []int, currentCost, current int) []int {
 	if len(old) == 0 {
-		// hack: here the currentCost is always == 0
+		for i := 0; i < len(new); i++ {
+			if new[i] != infinity {
+				p.paths[i] = append(p.paths[i], []int{current, i}...)
+			}
+			new[i] += currentCost
+		}
 		return new
 	}
 	for i := 0; i < len(new); i++ {
@@ -43,6 +52,7 @@ func (p *PathFinder) mergeExplorations(old, new []int, currentCost int) []int {
 			continue
 		}
 		if old[i] == infinity || old[i] > new[i]+currentCost {
+			p.paths[i] = append(append(p.paths[i][:0], p.paths[current]...), i)
 			old[i] = new[i] + currentCost
 		}
 	}
@@ -84,6 +94,7 @@ func New(geo [][]int) *PathFinder {
 		panic("height != width")
 	}
 	return &PathFinder{
-		geo: geo,
+		geo:   geo,
+		paths: make([][]int, len(geo)),
 	}
 }

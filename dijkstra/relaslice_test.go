@@ -31,56 +31,49 @@ var testRoadMap = RoadMap{
 
 func Test_explorePathsFrom(t *testing.T) {
 	type fields struct {
-		path Path
+		from int
 	}
 	tests := []struct {
 		name   string
 		fields fields
-		want   []Path
+		want   Exploration
 	}{
 		{
 			name: "from_zero",
 			fields: fields{
-				path: Path{
-					path: []int{0},
-					cost: 0,
-				},
+				from: 0,
 			},
-			want: []Path{
-				{path: []int{0, 1}, cost: 8},
-				{path: []int{0, 6}, cost: 5},
-				{path: []int{0, 9}, cost: 132},
-			},
-		},
-		{
-			name: "from_point",
-			fields: fields{
-				path: Path{
-					path: []int{0, 1, 8},
-					cost: 17,
-				},
-			},
-			want: []Path{
-				{path: []int{0, 1, 8, 5}, cost: 71},
-				{path: []int{0, 1, 8, 11}, cost: 82},
+			want: Exploration{
+				{path: nil, cost: 0},
+				{path: []int{1}, cost: 8},
+				{path: nil, cost: 0},
+				{path: nil, cost: 0},
+				{path: nil, cost: 0},
+				{path: nil, cost: 0},
+				{path: []int{6}, cost: 5},
+				{path: nil, cost: 0},
+				{path: nil, cost: 0},
+				{path: []int{9}, cost: 132},
+				{path: nil, cost: 0},
+				{path: nil, cost: 0},
+				{path: nil, cost: 0},
+				{path: nil, cost: 0},
 			},
 		},
 		{
 			name: "dead_end",
 			fields: fields{
-				path: Path{
-					path: []int{0, 9, 11},
-					cost: 150,
-				},
+				from: 11,
 			},
-			want: []Path{},
+			want: make(Exploration, 14),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := testRoadMap.explorePathsFrom(tt.fields.path)
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("want: %v, got: %v", tt.want, got)
+			var e = make(Exploration, 14)
+			e.explorePathsFrom(testRoadMap, tt.fields.from)
+			if !reflect.DeepEqual(e, tt.want) {
+				t.Errorf("want: %v, got: %v", tt.want, e)
 			}
 		})
 	}
@@ -88,48 +81,24 @@ func Test_explorePathsFrom(t *testing.T) {
 
 func Test_explorePathFromTo(t *testing.T) {
 	path := testRoadMap.explorePathFromTo(0, 10)
-	if !reflect.DeepEqual(path, Path{path: []int{0, 1, 2, 5, 13, 12, 10}, cost: 70}) {
+	if !reflect.DeepEqual(path, Path{path: []int{0, 1, 2, 5, 13, 12, 10}, cost: 70, explored: true}) {
 		t.Errorf("wrong path: %v", path)
 	}
 	path = testRoadMap.explorePathFromTo(0, 11)
-	if !reflect.DeepEqual(path, Path{path: []int{0, 1, 2, 5, 13, 12, 11}, cost: 61}) {
+	if !reflect.DeepEqual(path, Path{path: []int{0, 1, 2, 5, 13, 12, 11}, cost: 61, explored: true}) {
 		t.Errorf("wrong path: %v", path)
 	}
 	path = testRoadMap.explorePathFromTo(0, 4)
-	if !reflect.DeepEqual(path, Path{path: []int{0, 1, 2, 3, 4}, cost: 36}) {
+	if !reflect.DeepEqual(path, Path{path: []int{0, 1, 2, 3, 4}, cost: 36, explored: true}) {
 		t.Errorf("wrong path: %v", path)
 	}
 	path = testRoadMap.explorePathFromTo(0, 0)
-	if !reflect.DeepEqual(path, Path{path: []int{0}, cost: 0}) {
+	if !reflect.DeepEqual(path, Path{path: []int{0}, cost: 0, explored: true}) {
 		t.Errorf("wrong path: %v", path)
 	}
 	path = testRoadMap.explorePathFromTo(10, 0)
-	if !reflect.DeepEqual(path, Path{path: nil, cost: 0}) {
+	if !reflect.DeepEqual(path, Path{path: []int{}, cost: 0, explored: false}) {
 		t.Errorf("wrong path: %v", path)
-	}
-}
-
-func Benchmark_explorePathsFrom(b *testing.B) {
-	var paths = make([]Path, 0, 16)
-	for i := 0; i < b.N; i++ {
-		if len(paths) == 0 {
-			paths = testRoadMap.explorePathsFrom(Path{
-				path: []int{0},
-				cost: 0,
-			})
-			continue
-		}
-		var newPaths = make([]Path, 0, 16)
-		for nn, path := range paths {
-			if nn > 0 {
-				i++
-			}
-			newPaths = append(newPaths, testRoadMap.explorePathsFrom(path)...)
-			if i == b.N {
-				break
-			}
-		}
-		paths = newPaths
 	}
 }
 
@@ -139,5 +108,25 @@ func Benchmark_relaSlice_GetPath(b *testing.B) {
 			b.Errorf("expected 61, got: %0.2f", p.cost)
 		}
 		_ = testRoadMap.explorePathFromTo(rand.Intn(14), rand.Intn(14))
+	}
+}
+
+func Benchmark_relaSlice_GetPath_2(b *testing.B) {
+	var rm = make(RoadMap, maxNodes*10)
+	for i := 0; i < len(rm); i++ {
+		rm[i] = PathWeight{
+			from:   rand.Intn(maxNodes),
+			to:     rand.Intn(maxNodes),
+			weight: rand.Float64() * 12,
+		}
+	}
+	rm[maxNodes*10-1] = PathWeight{
+		from:   maxNodes - 1,
+		to:     0,
+		weight: 99,
+	}
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = rm.explorePathFromTo(rand.Intn(maxNodes), rand.Intn(maxNodes))
 	}
 }

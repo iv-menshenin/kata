@@ -1,6 +1,7 @@
 package dijkstra
 
 import (
+	"math/rand"
 	"reflect"
 	"testing"
 )
@@ -59,6 +60,22 @@ func Benchmark_PathFinder_GetPath(b *testing.B) {
 		if cost, _ := pFinder.GetPath(0, 10); cost != 70 {
 			b.Errorf("expected 70, got: %d", cost)
 		}
+	}
+}
+
+func Benchmark_PathFinder_GetPath_2(b *testing.B) {
+	const dim = 1024
+	var geo = make([][]int, dim)
+	for i := 0; i < len(geo); i++ {
+		geo[i] = make([]int, dim)
+	}
+	for i := 0; i < 1000000; i++ {
+		geo[rand.Intn(dim)][rand.Intn(dim)] = rand.Intn(100)
+	}
+	b.ResetTimer()
+	var pFinder = New(geo)
+	for i := 0; i < b.N; i++ {
+		_, _ = pFinder.GetPath(rand.Intn(dim), rand.Intn(dim))
 	}
 }
 

@@ -6,30 +6,27 @@ type (
 		weight   float64
 	}
 	Path struct {
-		path []int
-		cost float64
+		path     []int
+		cost     float64
+		explored bool
 	}
-	RoadMap []PathWeight
+	RoadMap     []PathWeight
+	Exploration []Path
 )
 
 const maxNodes = 1024
 
-func (r RoadMap) explorePathsFrom(path Path) []Path {
-	if len(path.path) == 0 {
-		panic("path slice is empty")
-	}
-	current := path.path[len(path.path)-1]
-	var ways = make([]Path, 0)
-	for _, weight := range r {
-		if weight.from != current {
+func (e Exploration) explorePathsFrom(r RoadMap, from int) {
+	for _, way := range r {
+		if way.from != from {
 			continue
 		}
-		ways = append(ways, Path{
-			path: append(append(make([]int, 0, 16), path.path...), weight.to),
-			cost: path.cost + weight.weight,
-		})
+		cost := e[from].cost + way.weight
+		if len(e[way.to].path) == 0 || e[way.to].cost > cost {
+			e[way.to].path = append(append(e[way.to].path[:0], e[from].path...), way.to)
+			e[way.to].cost = cost
+		}
 	}
-	return ways
 }
 
 func (r RoadMap) getMaxNode() int {
@@ -42,24 +39,25 @@ func (r RoadMap) getMaxNode() int {
 			mNode = node.to
 		}
 	}
-	if mNode > maxNodes {
+	if !(mNode < maxNodes) {
 		panic("max nodes count exceeded")
 	}
 	return mNode
 }
 
-func selectNextNode(uncovered []bool, explored []Path) (next int, cost float64) {
+func (e Exploration) selectNextNode() (next int) {
+	var cost float64
 	next = -1
-	for i := range uncovered {
-		if uncovered[i] {
+	for i := range e {
+		if e[i].explored {
 			continue
 		}
-		if len(explored[i].path) == 0 {
+		if len(e[i].path) == 0 {
 			continue
 		}
-		if next < 0 || cost > explored[i].cost {
+		if next < 0 || cost > e[i].cost {
 			next = i
-			cost = explored[i].cost
+			cost = e[i].cost
 		}
 	}
 	return
@@ -67,22 +65,25 @@ func selectNextNode(uncovered []bool, explored []Path) (next int, cost float64) 
 
 func (r RoadMap) explorePathFromTo(from, to int) Path {
 	var currNode = from
-	var currCost float64
-	var explored = make([]Path, r.getMaxNode()+1)
-	var uncovered = make([]bool, r.getMaxNode()+1)
-	explored[from] = Path{path: []int{currNode}, cost: currCost}
+	var exploration = newExploration(r.getMaxNode() + 1)
+	exploration[from].path = append(exploration[from].path, currNode)
 	for {
-		for _, path := range r.explorePathsFrom(explored[currNode]) {
-			dest := path.path[len(path.path)-1]
-			if len(explored[dest].path) == 0 || explored[dest].cost > path.cost {
-				explored[dest] = path
-			}
-		}
-		uncovered[currNode] = true
-		currNode, currCost = selectNextNode(uncovered, explored)
+		exploration.explorePathsFrom(r, currNode)
+		exploration[currNode].explored = true
+		currNode = exploration.selectNextNode()
 		if currNode < 0 {
 			break
 		}
 	}
-	return explored[to]
+	return exploration[to]
+}
+
+func newExploration(dim int) Exploration {
+	var ex [maxNodes]Path
+	var place = make([]int, dim*dim)
+	var exploration = ex[:dim]
+	for i := 0; i < dim; i++ {
+		exploration[i].path = (place[i*dim : i*dim+dim])[:0]
+	}
+	return exploration
 }

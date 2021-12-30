@@ -19,12 +19,12 @@ type (
 func (m *mapBucketLogger) login(id uint64) {
 	tz := time.Now()
 	m.mux.Lock()
-	m.remap(tz)
+	m.remapIfNeeded(tz)
 	m.buckets[0].counter[id]++
 	m.mux.Unlock()
 }
 
-func (m *mapBucketLogger) remap(t time.Time) {
+func (m *mapBucketLogger) remapIfNeeded(t time.Time) {
 	if len(m.buckets[0].counter) == 0 {
 		m.buckets[0].tz = t
 		return
@@ -38,10 +38,16 @@ func (m *mapBucketLogger) remap(t time.Time) {
 	}
 }
 
+func (m *mapBucketLogger) getColdBuckets() []loggedInMap {
+	var cold = make([]loggedInMap, len(m.buckets)-1)
+	copy(cold[:], m.buckets[1:])
+	return cold
+}
+
 func (m *mapBucketLogger) count(id uint64) (count int) {
 	m.mux.Lock()
 	count = m.buckets[0].counter[id]
-	cold := m.buckets[1:]
+	cold := m.getColdBuckets()
 	m.mux.Unlock()
 	for _, bucket := range cold {
 		count += bucket.counter[id]
@@ -55,7 +61,7 @@ func (m *mapBucketLogger) maxLogged() uint64 {
 	for id, cnt := range m.buckets[0].counter {
 		counted[id] += cnt
 	}
-	cold := m.buckets[1:]
+	cold := m.getColdBuckets()
 	m.mux.Unlock()
 	for _, bucket := range cold {
 		for id, cnt := range bucket.counter {

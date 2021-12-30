@@ -19,7 +19,7 @@ type (
 func (m *arrayBucketLogger) login(id uint64) {
 	t := time.Now()
 	m.mux.Lock()
-	m.remap(t)
+	m.remapIfNeeded(t)
 	m.buckets[0] = append(m.buckets[0], loggedIn{
 		uid: id,
 		tz:  t,
@@ -27,7 +27,7 @@ func (m *arrayBucketLogger) login(id uint64) {
 	m.mux.Unlock()
 }
 
-func (m *arrayBucketLogger) remap(t time.Time) {
+func (m *arrayBucketLogger) remapIfNeeded(t time.Time) {
 	if len(m.buckets[0]) == 0 {
 		return
 	}
@@ -38,21 +38,31 @@ func (m *arrayBucketLogger) remap(t time.Time) {
 	}
 }
 
+func (m *arrayBucketLogger) getColdBuckets() [][]loggedIn {
+	var cold = make([][]loggedIn, len(m.buckets)-2)
+	copy(cold[:], m.buckets[1:len(m.buckets)-2])
+	return cold
+}
+
 func (m *arrayBucketLogger) count(id uint64) (count int) {
 	m.mux.Lock()
-	var buckets = m.buckets[1 : len(m.buckets)-2]
+	// take buckets that could not be changed concurrently
+	cold := m.getColdBuckets()
+	// let's calculate the data in the hot bucket
 	for _, el := range m.buckets[0] {
 		if el.uid == id {
 			count++
 		}
 	}
+	// this bucket can be reduced in remapIfNeeded
 	for _, el := range m.buckets[len(m.buckets)-1] {
 		if el.uid == id && time.Since(el.tz) < actualTime {
 			count++
 		}
 	}
 	m.mux.Unlock()
-	for _, bucket := range buckets {
+	// we can calculate it concurrently without locks
+	for _, bucket := range cold {
 		for _, el := range bucket {
 			if el.uid == id {
 				count++
@@ -66,12 +76,23 @@ func (m *arrayBucketLogger) maxLogged() uint64 {
 	var id uint64
 	var loginsCounter = make(map[uint64]int)
 	m.mux.Lock()
-	for _, bucket := range m.buckets {
-		for _, el := range bucket {
+	cold := m.getColdBuckets()
+	// let's calculate the data in the hot bucket
+	for _, el := range m.buckets[0] {
+		loginsCounter[el.uid]++
+	}
+	// this bucket can be reduced in remapIfNeeded
+	for _, el := range m.buckets[len(m.buckets)-1] {
+		if el.uid == id && time.Since(el.tz) < actualTime {
 			loginsCounter[el.uid]++
 		}
 	}
 	m.mux.Unlock()
+	for _, bucket := range cold {
+		for _, el := range bucket {
+			loginsCounter[el.uid]++
+		}
+	}
 	var maxLogins = -1
 	for uid, loginsCount := range loginsCounter {
 		if maxLogins < loginsCount {

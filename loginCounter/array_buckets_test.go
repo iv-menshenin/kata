@@ -14,7 +14,7 @@ func Benchmark_counter_arrayBucketLogger_Login(b *testing.B) {
 func Benchmark_counter_arrayBucketLogger_Count(b *testing.B) {
 	/*
 		cpu: Intel(R) Core(TM) i7-9700F CPU @ 3.00GHz
-		Benchmark_counter_arrayBucketLogger_Count-8   	  347372	     15536 ns/op	      82 B/op	       0 allocs/op
+		Benchmark_counter_arrayBucketLogger_Count-8   	  122518	     28843 ns/op	   41148 B/op	       0 allocs/op
 	*/
 	var c = NewArrayBucketLogger()
 	benchCounterCount(b, c)

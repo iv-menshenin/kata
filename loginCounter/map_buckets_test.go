@@ -14,7 +14,7 @@ func Benchmark_counter_mapBucketLogger_Login(b *testing.B) {
 func Benchmark_counter_mapBucketLogger_Count(b *testing.B) {
 	/*
 		cpu: Intel(R) Core(TM) i7-9700F CPU @ 3.00GHz
-		Benchmark_counter_mapBucketLogger_Count-8     	 1871526	       672.8 ns/op	       0 B/op	       0 allocs/op
+		Benchmark_counter_mapBucketLogger_Count-8     	   88888	     12838 ns/op	   54800 B/op	       0 allocs/op
 	*/
 	var c = NewMapBucketLogger()
 	benchCounterCount(b, c)

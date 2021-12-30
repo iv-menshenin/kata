@@ -20,7 +20,7 @@ type (
 const (
 	startBandwidth = 100000
 	actualTime     = time.Minute * 5
-	bucketCount    = 100
-	bucketTime     = actualTime / bucketCount
-	bucketSize     = startBandwidth * (actualTime / time.Second) / bucketCount
+	bucketsCount   = 5000
+	bucketTime     = actualTime / bucketsCount
+	bucketSize     = startBandwidth * (actualTime / time.Second) / bucketsCount
 )

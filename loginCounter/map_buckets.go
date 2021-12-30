@@ -77,9 +77,9 @@ func (m *mapBucketLogger) maxLogged() uint64 {
 
 func NewMapBucketLogger() Counter {
 	logger := mapBucketLogger{
-		buckets: make([]loggedInMap, 0, bucketCount),
+		buckets: make([]loggedInMap, 0, bucketsCount),
 	}
-	for i := 0; i < bucketCount; i++ {
+	for i := 0; i < bucketsCount; i++ {
 		logger.buckets = append(logger.buckets, loggedInMap{
 			counter: make(map[uint64]int, bucketSize),
 			tz:      time.Now(),

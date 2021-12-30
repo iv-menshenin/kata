@@ -84,9 +84,9 @@ func (m *arrayBucketLogger) maxLogged() uint64 {
 
 func NewArrayBucketLogger() Counter {
 	logger := arrayBucketLogger{
-		buckets: make([][]loggedIn, 0, bucketCount),
+		buckets: make([][]loggedIn, 0, bucketsCount),
 	}
-	for i := 0; i < bucketCount; i++ {
+	for i := 0; i < bucketsCount; i++ {
 		logger.buckets = append(logger.buckets, make([]loggedIn, 0, bucketSize))
 	}
 	return &logger

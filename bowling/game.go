@@ -1,14 +1,16 @@
 package bowling
 
 type (
-	bonus int
-	frame struct {
-		score      []int
-		over       []int
-		frameBonus bonus
+	bonus     int
+	gameFrame struct {
+		score []int
+		over  []int
 	}
-	Game struct {
-		frames []frame
+	calculator struct {
+		bonusStack []int
+	}
+	gameScores struct {
+		frames []gameFrame
 	}
 )
 
@@ -16,70 +18,112 @@ const (
 	regular bonus = iota
 	spare
 	strike
+
+	lastFrameNum = 9
 )
 
-func scoreFrame(f []int) (result int) {
-	for _, s := range f {
-		result += s
+func (g *gameScores) Roll(score int) {
+	if g.isOverScore() {
+		g.lastFrame().appendOver(score)
+		return
+	}
+	if g.isNeedNewFrame() {
+		g.addToNewFrame(score)
+		return
+	}
+	g.lastFrame().appendScore(score)
+}
+
+func (g *gameScores) isOverScore() bool {
+	lastFrame := len(g.frames) - 1
+	return lastFrame == lastFrameNum && g.frames[lastFrame].isCompleteFrame()
+}
+
+func (g *gameScores) isNeedNewFrame() bool {
+	last := g.lastFrame()
+	return last == nil || last.isCompleteFrame()
+}
+
+func (g *gameScores) lastFrame() *gameFrame {
+	if len(g.frames) == 0 {
+		return nil
+	}
+	return &g.frames[len(g.frames)-1]
+}
+
+func (g *gameScores) addToNewFrame(score int) {
+	g.frames = append(g.frames, gameFrame{
+		score: []int{score},
+	})
+}
+
+func (g *gameScores) Score() (result int) {
+	var calc calculator
+	for _, currFrame := range g.frames {
+		for _, score := range currFrame.score {
+			result += score + calc.popBonus(score)
+		}
+		switch currFrame.frameBonus() {
+		case spare:
+			calc.putBonus(1)
+		case strike:
+			calc.putBonus(2)
+		}
+		for _, score := range currFrame.over {
+			result += calc.popBonus(score)
+		}
 	}
 	return result
 }
 
-func (g *Game) Roll(score int) {
-	var f frame
-	lastFrame := len(g.frames) - 1
-	if lastFrame < 0 || len(g.frames[lastFrame].score) == 2 || scoreFrame(g.frames[lastFrame].score) > 9 {
-		if lastFrame == 9 {
-			f = g.frames[lastFrame]
-			f.over = append(f.over, score)
-			g.frames[lastFrame] = f
-			return
+func (c *calculator) popBonus(score int) (b int) {
+	for i := range c.bonusStack {
+		if c.bonusStack[i] > 0 {
+			c.bonusStack[i]--
+			b += score
 		}
-		f = frame{
-			score:      make([]int, 0, 3),
-			frameBonus: regular,
-		}
-		g.frames = append(g.frames, f)
-		lastFrame = len(g.frames) - 1
-	} else {
-		f = g.frames[lastFrame]
 	}
-	f.score = append(f.score, score)
-	if f.frameBonus == regular && scoreFrame(f.score) == 10 && len(f.score) == 2 {
-		f.frameBonus = spare
-	}
-	if f.frameBonus == regular && scoreFrame(f.score) == 10 && len(f.score) == 1 {
-		f.frameBonus = strike
-	}
-	g.frames[lastFrame] = f
+	return b
 }
 
-func (g *Game) Score() (result int) {
-	var bonus []int
-	for _, f := range g.frames {
-		for _, s := range f.score {
-			result += s
-			for i := range bonus {
-				if bonus[i] > 0 {
-					bonus[i]--
-					result += s
-				}
-			}
-		}
-		if f.frameBonus == spare {
-			bonus = append(bonus, 1)
-		}
-		if f.frameBonus == strike {
-			bonus = append(bonus, 2)
-		}
-		for _, s := range f.over {
-			for i := range bonus {
-				if bonus[i] > 0 {
-					bonus[i]--
-					result += s
-				}
-			}
-		}
+func (c *calculator) putBonus(b int) {
+	c.bonusStack = append(c.bonusStack, b)
+}
+
+func (f gameFrame) frameBonus() bonus {
+	switch true {
+	case f.isSpare():
+		return spare
+	case f.isStrike():
+		return strike
+	default:
+		return regular
+	}
+}
+
+func (f *gameFrame) isSpare() bool {
+	return scoreFrame(f.score) == 10 && len(f.score) == 2
+}
+
+func (f *gameFrame) isStrike() bool {
+	return scoreFrame(f.score) == 10 && len(f.score) == 1
+}
+
+func (f *gameFrame) appendScore(score int) {
+	f.score = append(f.score, score)
+}
+
+func (f *gameFrame) appendOver(score int) {
+	f.over = append(f.over, score)
+}
+
+func (f *gameFrame) isCompleteFrame() bool {
+	return len(f.score) == 2 || scoreFrame(f.score) > 9
+}
+
+func scoreFrame(f []int) (result int) {
+	for _, s := range f {
+		result += s
 	}
 	return result
 }

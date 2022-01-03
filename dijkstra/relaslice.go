@@ -27,6 +27,7 @@ func (e Exploration) explorePathsFrom(r RoadMap, from int) {
 			e[way.to].cost = cost
 		}
 	}
+	e[from].explored = true
 }
 
 func (r RoadMap) getMaxNode() int {
@@ -69,7 +70,6 @@ func (r RoadMap) explorePathFromTo(from, to int) Path {
 	exploration[from].path = append(exploration[from].path, currNode)
 	for {
 		exploration.explorePathsFrom(r, currNode)
-		exploration[currNode].explored = true
 		currNode = exploration.selectNextNode()
 		if currNode < 0 {
 			break

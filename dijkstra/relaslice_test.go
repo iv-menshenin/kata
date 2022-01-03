@@ -44,7 +44,7 @@ func Test_explorePathsFrom(t *testing.T) {
 				from: 0,
 			},
 			want: Exploration{
-				{path: nil, cost: 0},
+				{path: nil, cost: 0, explored: true},
 				{path: []int{1}, cost: 8},
 				{path: nil, cost: 0},
 				{path: nil, cost: 0},
@@ -65,7 +65,22 @@ func Test_explorePathsFrom(t *testing.T) {
 			fields: fields{
 				from: 11,
 			},
-			want: make(Exploration, 14),
+			want: Exploration{
+				{path: nil, cost: 0},
+				{path: nil, cost: 0},
+				{path: nil, cost: 0},
+				{path: nil, cost: 0},
+				{path: nil, cost: 0},
+				{path: nil, cost: 0},
+				{path: nil, cost: 0},
+				{path: nil, cost: 0},
+				{path: nil, cost: 0},
+				{path: nil, cost: 0},
+				{path: nil, cost: 0},
+				{path: nil, cost: 0, explored: true},
+				{path: nil, cost: 0},
+				{path: nil, cost: 0},
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -73,7 +88,7 @@ func Test_explorePathsFrom(t *testing.T) {
 			var e = make(Exploration, 14)
 			e.explorePathsFrom(testRoadMap, tt.fields.from)
 			if !reflect.DeepEqual(e, tt.want) {
-				t.Errorf("want: %v, got: %v", tt.want, e)
+				t.Errorf("\nwant: %v,\n got: %v", tt.want, e)
 			}
 		})
 	}

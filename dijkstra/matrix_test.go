@@ -48,6 +48,9 @@ func TestPathFinder_GetPath(t *testing.T) {
 	if cost, _ := pFinder.GetPath(11, 8); cost != infinity {
 		t.Errorf("expected infinity, got: %d", cost)
 	}
+	if cost, _ := pFinder.GetPath(0, 18); cost != infinity {
+		t.Errorf("expected infinity, got: %d", cost)
+	}
 }
 
 func Benchmark_PathFinder_GetPath(b *testing.B) {
@@ -137,10 +140,11 @@ func TestPathFinder_nextNode(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			p := &PathFinder{
+			p := &matrixExplorer{
 				explored: tt.fields.explored,
+				current:  tt.args.exploration,
 			}
-			got, got1, got2 := p.nextNode(tt.args.exploration)
+			got, got1, got2 := p.nextNode()
 			if got != tt.want {
 				t.Errorf("nextNode() got = %v, want %v", got, tt.want)
 			}

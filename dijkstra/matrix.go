@@ -1,10 +1,13 @@
 package dijkstra
 
 type (
-	PathFinder struct {
-		geo      [][]int
-		paths    [][]int
+	matrixGraph struct {
+		geo [][]int
+	}
+	matrixExplorer struct {
 		explored []bool
+		current  []int
+		paths    [][]int
 	}
 )
 
@@ -13,72 +16,74 @@ const (
 	infinity  = -1
 )
 
-func (p *PathFinder) GetPath(from, to int) (int, []int) {
-	p.explored = make([]bool, len(p.geo))
-	for i := 0; i < len(p.paths); i++ {
-		p.paths[i] = make([]int, 0, len(p.geo))
+func (p *matrixGraph) GetPath(from, to int) (int, []int) {
+	var explorer = matrixExplorer{
+		explored: make([]bool, len(p.geo)),
+		paths:    make([][]int, len(p.geo)),
+	}
+	for i := 0; i < len(explorer.paths); i++ {
+		explorer.paths[i] = make([]int, 0, len(p.geo))
 	}
 	var current = from
 	var currentCost = 0
 	var canContinue bool
-	var uncovered []int
 	for {
-		p.explored[current] = true
-		exploration := p.explorePath(current)
-		uncovered = p.mergeExplorations(uncovered, exploration, currentCost, current)
-		current, currentCost, canContinue = p.nextNode(uncovered)
+		explorer.explored[current] = true
+		exploration := explorer.explorePath(p.geo[current])
+		explorer.mergeExplorations(exploration, currentCost, current)
+		current, currentCost, canContinue = explorer.nextNode()
 		if !canContinue {
 			break
 		}
 	}
-	if to < len(uncovered) {
-		return uncovered[to], p.paths[to]
+	if to < len(explorer.current) {
+		return explorer.current[to], explorer.paths[to]
 	}
 	return infinity, nil
 }
 
-func (p *PathFinder) mergeExplorations(old, new []int, currentCost, current int) []int {
-	if len(old) == 0 {
-		for i := 0; i < len(new); i++ {
-			if new[i] != infinity {
-				p.paths[i] = append(p.paths[i], []int{current, i}...)
+func (e *matrixExplorer) mergeExplorations(bestPaths []int, currentCost, currentIdx int) {
+	if len(e.current) == 0 {
+		for i := 0; i < len(bestPaths); i++ {
+			if bestPaths[i] != infinity {
+				e.paths[i] = append(e.paths[i], []int{currentIdx, i}...)
 			}
-			new[i] += currentCost
+			bestPaths[i] += currentCost
 		}
-		return new
+		e.current = bestPaths
+		return
 	}
-	for i := 0; i < len(new); i++ {
-		if new[i] == infinity {
+	for i := 0; i < len(bestPaths); i++ {
+		if bestPaths[i] == infinity {
 			continue
 		}
-		if old[i] == infinity || old[i] > new[i]+currentCost {
-			p.paths[i] = append(append(p.paths[i][:0], p.paths[current]...), i)
-			old[i] = new[i] + currentCost
+		if e.current[i] == infinity || e.current[i] > bestPaths[i]+currentCost {
+			e.paths[i] = append(append(e.paths[i][:0], e.paths[currentIdx]...), i)
+			e.current[i] = bestPaths[i] + currentCost
 		}
 	}
-	return old
 }
 
-func (p *PathFinder) nextNode(exploration []int) (int, int, bool) {
+func (e *matrixExplorer) nextNode() (int, int, bool) {
 	const notFound = -1
 	var node, weight = notFound, infinity
-	for i := 0; i < len(exploration); i++ {
-		if p.explored[i] || exploration[i] == infinity {
+	for i := 0; i < len(e.current); i++ {
+		if e.explored[i] || e.current[i] == infinity {
 			continue
 		}
-		if exploration[i] < weight || node < 0 {
-			weight = exploration[i]
+		if e.current[i] < weight || node < 0 {
+			weight = e.current[i]
 			node = i
 		}
 	}
 	return node, weight, node != notFound
 }
 
-func (p *PathFinder) explorePath(from int) []int {
-	var exploration = make([]int, len(p.geo[from]))
-	for i := 0; i < len(p.geo[from]); i++ {
-		if p.geo[from][i] != uncovered {
-			exploration[i] = p.geo[from][i]
+func (e *matrixExplorer) explorePath(node []int) []int {
+	var exploration = make([]int, len(node))
+	for i := 0; i < len(node); i++ {
+		if node[i] != uncovered {
+			exploration[i] = node[i]
 			continue
 		}
 		exploration[i] = infinity
@@ -86,15 +91,14 @@ func (p *PathFinder) explorePath(from int) []int {
 	return exploration
 }
 
-func New(geo [][]int) *PathFinder {
+func New(geo [][]int) *matrixGraph {
 	if len(geo) == 0 {
 		panic("matrix is empty")
 	}
 	if len(geo) != len(geo[0]) {
 		panic("height != width")
 	}
-	return &PathFinder{
-		geo:   geo,
-		paths: make([][]int, len(geo)),
+	return &matrixGraph{
+		geo: geo,
 	}
 }

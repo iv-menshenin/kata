@@ -7,13 +7,13 @@ BenchmarkLength1-8      46648654                62.92 ns/op           64 B/op   
 BenchmarkLength2-8      167252322                7.023 ns/op           0 B/op          0 allocs/op
 */
 
-func BenchmarkLength1(b *testing.B) {
+func Benchmark_strLenBytesBuffer(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		_ = length1()
+		_ = strLenBytesBuffer()
 	}
 }
-func BenchmarkLength2(b *testing.B) {
+func Benchmark_strLenNewBufferString(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		_ = length2()
+		_ = strLenNewBufferString()
 	}
 }

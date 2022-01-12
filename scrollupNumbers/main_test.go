@@ -57,3 +57,51 @@ func Test_scrollNumbersBoilerPrint(t *testing.T) {
 func Test_scrollNumbersSimpled(t *testing.T) {
 	testScrollupNumbers(t, scrollNumbersSimpled)
 }
+
+func Test_scrollNumbersOptimistic(t *testing.T) {
+	testScrollupNumbers(t, scrollNumbersOptimistic)
+}
+
+func benchScrollupNumbers(b *testing.B, data []int, fn scrollupNumbersFn) {
+	for i := 1; i < b.N; i++ {
+		_ = fn(data)
+	}
+}
+
+func Benchmark_scrollupNumbers(t *testing.B) {
+	var data []int
+	for i := 0; i < 100; i++ {
+		if i%13 == 0 {
+			continue
+		}
+		if i%27 == 0 {
+			continue
+		}
+		data = append(data, i)
+	}
+	t.ResetTimer()
+	t.Run("scrollupNumbersSerial", func(b *testing.B) {
+		benchScrollupNumbers(b, data, scrollupNumbersSerial)
+	})
+	t.Run("scrollNumbersBoilerPrint", func(b *testing.B) {
+		benchScrollupNumbers(b, data, scrollNumbersBoilerPrint)
+	})
+	t.Run("scrollNumbersSimpled", func(b *testing.B) {
+		benchScrollupNumbers(b, data, scrollNumbersSimpled)
+	})
+	t.Run("scrollNumbersOptimistic", func(b *testing.B) {
+		benchScrollupNumbers(b, data, scrollNumbersOptimistic)
+	})
+	/*
+	   cpu: Intel(R) Core(TM) i7-9700F CPU @ 3.00GHz
+	   	Benchmark_scrollupNumbers
+	   	Benchmark_scrollupNumbers/scrollupNumbersSerial
+	   	Benchmark_scrollupNumbers/scrollupNumbersSerial-8         	  362173	      3142 ns/op	     640 B/op	      17 allocs/op
+	   	Benchmark_scrollupNumbers/scrollNumbersBoilerPrint
+	   	Benchmark_scrollupNumbers/scrollNumbersBoilerPrint-8      	  354254	      3392 ns/op	     720 B/op	      29 allocs/op
+	   	Benchmark_scrollupNumbers/scrollNumbersSimpled
+	   	Benchmark_scrollupNumbers/scrollNumbersSimpled-8          	  362602	      3333 ns/op	     720 B/op	      29 allocs/op
+	   	Benchmark_scrollupNumbers/scrollNumbersOptimistic
+	   	Benchmark_scrollupNumbers/scrollNumbersOptimistic-8       	  540072	      2158 ns/op	     367 B/op	      10 allocs/op
+	*/
+}

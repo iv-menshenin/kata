@@ -80,3 +80,26 @@ func scrollNumbersSimpled(n []int) (result string) {
 	}
 	return result
 }
+
+func scrollNumbersOptimistic(n []int) (result string) {
+	sort.Ints(n)
+	var start, end int
+	var separator string
+	for {
+		if start > len(n)-1 {
+			break
+		}
+		for end = start + 1; end < len(n) && n[end]-n[start] == end-start; end++ {
+		}
+		if a, b := n[start], n[end-1]; a != b {
+			result += separator + strconv.Itoa(a) + "-" + strconv.Itoa(b)
+		} else {
+			result += separator + strconv.Itoa(a)
+		}
+		start = end
+		if separator == "" {
+			separator = ","
+		}
+	}
+	return result
+}

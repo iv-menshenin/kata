@@ -93,15 +93,15 @@ func Benchmark_scrollupNumbers(t *testing.B) {
 		benchScrollupNumbers(b, data, scrollNumbersOptimistic)
 	})
 	/*
-	   cpu: Intel(R) Core(TM) i7-9700F CPU @ 3.00GHz
-	   	Benchmark_scrollupNumbers
-	   	Benchmark_scrollupNumbers/scrollupNumbersSerial
-	   	Benchmark_scrollupNumbers/scrollupNumbersSerial-8         	  362173	      3142 ns/op	     640 B/op	      17 allocs/op
-	   	Benchmark_scrollupNumbers/scrollNumbersBoilerPrint
-	   	Benchmark_scrollupNumbers/scrollNumbersBoilerPrint-8      	  354254	      3392 ns/op	     720 B/op	      29 allocs/op
-	   	Benchmark_scrollupNumbers/scrollNumbersSimpled
-	   	Benchmark_scrollupNumbers/scrollNumbersSimpled-8          	  362602	      3333 ns/op	     720 B/op	      29 allocs/op
-	   	Benchmark_scrollupNumbers/scrollNumbersOptimistic
-	   	Benchmark_scrollupNumbers/scrollNumbersOptimistic-8       	  540072	      2158 ns/op	     367 B/op	      10 allocs/op
+		   cpu: Intel(R) Core(TM) i7-9700F CPU @ 3.00GHz
+		   	Benchmark_scrollupNumbers
+		   	Benchmark_scrollupNumbers/scrollupNumbersSerial
+			Benchmark_scrollupNumbers/scrollupNumbersSerial-8         	  379347	      3133 ns/op	     640 B/op	      17 allocs/op
+			Benchmark_scrollupNumbers/scrollNumbersBoilerPrint
+			Benchmark_scrollupNumbers/scrollNumbersBoilerPrint-8      	  357234	      3389 ns/op	     720 B/op	      29 allocs/op
+			Benchmark_scrollupNumbers/scrollNumbersSimpled
+			Benchmark_scrollupNumbers/scrollNumbersSimpled-8          	  358098	      3347 ns/op	     720 B/op	      29 allocs/op
+			Benchmark_scrollupNumbers/scrollNumbersOptimistic
+			Benchmark_scrollupNumbers/scrollNumbersOptimistic-8       	  602614	      2005 ns/op	     167 B/op	       2 allocs/op
 	*/
 }

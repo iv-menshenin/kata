@@ -1,6 +1,7 @@
 package scrollupNumbers
 
 import (
+	"bytes"
 	"fmt"
 	"sort"
 	"strconv"
@@ -81,25 +82,25 @@ func scrollNumbersSimpled(n []int) (result string) {
 	return result
 }
 
-func scrollNumbersOptimistic(n []int) (result string) {
+func scrollNumbersOptimistic(n []int) string {
 	sort.Ints(n)
 	var start, end int
-	var separator string
+	var result = bytes.NewBufferString("")
 	for {
 		if start > len(n)-1 {
 			break
 		}
 		for end = start + 1; end < len(n) && n[end]-n[start] == end-start; end++ {
 		}
+		if result.Len() > 0 {
+			result.WriteRune(',')
+		}
 		if a, b := n[start], n[end-1]; a != b {
-			result += separator + strconv.Itoa(a) + "-" + strconv.Itoa(b)
+			result.WriteString(strconv.Itoa(a) + "-" + strconv.Itoa(b))
 		} else {
-			result += separator + strconv.Itoa(a)
+			result.WriteString(strconv.Itoa(b))
 		}
 		start = end
-		if separator == "" {
-			separator = ","
-		}
 	}
-	return result
+	return result.String()
 }

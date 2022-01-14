@@ -90,7 +90,10 @@ func scrollNumbersOptimistic(n []int) string {
 		if start > len(n)-1 {
 			break
 		}
-		for end = start + 1; end < len(n) && n[end]-n[start] == end-start; end++ {
+		for end = start + 1; end < len(n); end++ {
+			if n[end]-n[start] != end-start {
+				break
+			}
 		}
 		if result.Len() > 0 {
 			result.WriteRune(',')

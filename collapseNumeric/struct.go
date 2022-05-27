@@ -1,4 +1,4 @@
-package scrollupNumbers
+package collapseNumeric
 
 import (
 	"fmt"

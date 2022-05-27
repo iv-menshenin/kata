@@ -1,4 +1,4 @@
-package scrollupNumbers
+package collapseNumeric
 
 import (
 	"bytes"
@@ -7,50 +7,19 @@ import (
 	"strconv"
 )
 
-func scrollupNumbersSerial(n []int) string {
+/*
+	You are given a sequence of integers. You need to represent it in a string form using comma-separated intervals.
+	Example:
+		given:    []int{12, 2, 11, 3, 44, 4, 5, 6, 13}
+		returned: "2-6,11-13,44"
+*/
+
+func collapseNumericSequenceOOP(n []int) string {
 	var s = scroller{}
 	return s.scrollUp(n)
 }
 
-func scrollNumbersBoilerPrint(n []int) string {
-	sort.Ints(n)
-	var start int
-	var curr int
-	var results string
-	for i, num := range n {
-		last := i == len(n)-1
-		if i == 0 {
-			start = num
-			curr = num
-			if last {
-				return strconv.Itoa(num)
-			}
-			continue
-		}
-		isSeria := curr+1 == num
-		if isSeria {
-			curr = num
-		}
-		if last || !isSeria {
-			if results != "" {
-				results += ","
-			}
-			if start != curr {
-				results += fmt.Sprintf("%d-%d", start, curr)
-			} else {
-				results += fmt.Sprintf("%d", start)
-			}
-			start = num
-			curr = num
-		}
-		if last && !isSeria {
-			results += fmt.Sprintf(",%d", num)
-		}
-	}
-	return results
-}
-
-func scrollNumbersSimpled(n []int) (result string) {
+func collapseNumericSequenceIter(n []int) (result string) {
 	switch len(n) {
 	case 0:
 		return
@@ -82,7 +51,7 @@ func scrollNumbersSimpled(n []int) (result string) {
 	return result
 }
 
-func scrollNumbersOptimistic(n []int) string {
+func collapseNumericSequenceOptimistic(n []int) string {
 	sort.Ints(n)
 	var start, end int
 	var result = bytes.NewBufferString("")

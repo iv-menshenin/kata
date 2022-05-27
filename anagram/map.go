@@ -1,5 +1,7 @@
 package anagram
 
+// Identify if the two words obtained are anagrams
+
 func isAnagramMapped(a, b string) bool {
 	if len(a) != len(b) {
 		return false

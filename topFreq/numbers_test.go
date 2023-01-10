@@ -49,6 +49,12 @@ func Test_topFreq(t *testing.T) {
 			arg2: 1,
 			want: nil,
 		},
+		{
+			name: "issue-0001",
+			arg1: []int64{1, 2, 1, 1, 3, 2, 54, 66, 10, 11, 11, 13, 14, 1},
+			arg2: 3,
+			want: []int64{1, 2, 11},
+		},
 	}
 	for i := range tests {
 		test := tests[i]

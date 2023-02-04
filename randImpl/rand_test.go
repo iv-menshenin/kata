@@ -28,36 +28,51 @@ func TestBufferedRand_Generate(t *testing.T) {
 }
 
 func checkGeneration(t *testing.T, r randomizer) {
-	const iter = 1000000
+	const (
+		iter     = 1000000
+		parallel = 1000
+	)
 	var (
-		bucket [256]int64
+		bucket [250]int64
 		wg     sync.WaitGroup
+		ch     = make(chan struct{}, parallel)
 	)
 	wg.Add(iter)
 	for n := 0; n < iter; n++ {
+		ch <- struct{}{}
 		go func() {
-			ptr := int(uint64(r.Generate()) % uint64(len(bucket)))
+			got := r.Generate()
+			ptr := int(uint64(got) % uint64(len(bucket)))
 			atomic.AddInt64(&bucket[ptr], 1)
 			wg.Done()
+			<-ch
 		}()
 	}
 	wg.Wait()
-	var min, max, all int64
-	for _, b := range bucket {
-		if min == 0 || min > b {
-			min = b
+	stat := countStat(bucket[:])
+	if diff := stat.max - stat.min; diff > 500 || diff < 250 {
+		t.Errorf("entropy is too bad (%d:%d %d)", stat.min, stat.max, diff)
+	}
+	if stat.all != iter {
+		t.Errorf("%d iterations, but expected is %d", stat.all, iter)
+	}
+}
+
+func countStat(buckets []int64) (result stat) {
+	for _, b := range buckets {
+		if result.min == 0 || result.min > b {
+			result.min = b
 		}
-		if max < b {
-			max = b
+		if result.max < b {
+			result.max = b
 		}
-		all += b
+		result.all += b
 	}
-	if diff := max - min; diff > 500 || diff < 250 {
-		t.Errorf("entropy is too low (%d:%d %d)", min, max, diff)
-	}
-	if all != iter {
-		t.Errorf("%d iterations, but expected is %d", all, iter)
-	}
+	return
+}
+
+type stat struct {
+	min, max, all int64
 }
 
 func BenchmarkMathRand_Generate(b *testing.B) {
@@ -89,6 +104,14 @@ func BenchmarkCryptoRand_Generate_Concurrent(b *testing.B) {
 
 func BenchmarkBufferedRand_Generate_Concurrent(b *testing.B) {
 	benchGenerationConcurrent(b, &BufferedRand{})
+}
+
+func BenchmarkUnsafeRand_Generate(b *testing.B) {
+	b.ReportAllocs()
+	var rnd LightRand
+	for n := 0; n < b.N; n++ {
+		_ = rnd.Generate()
+	}
 }
 
 func benchGenerationConcurrent(b *testing.B, r randomizer) {

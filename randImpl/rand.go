@@ -13,15 +13,8 @@ import (
 )
 
 type (
-	MathRand     struct{}
-	CryptoRand   struct{}
-	BufferedRand struct {
-		o sync.Once
-		b io.Reader
-		c [4096]byte
-		a int64
-		x sync.Mutex
-	}
+	MathRand   struct{}
+	CryptoRand struct{}
 )
 
 func (r *MathRand) Generate() int64 {
@@ -38,27 +31,75 @@ func (r *CryptoRand) Generate() int64 {
 	return result.Int64()
 }
 
+type BufferedRand struct {
+	init   sync.Once
+	reader io.Reader
+
+	mux    sync.RWMutex
+	head   int64
+	buffer [16384]byte
+
+	refCh  chan struct{}
+	refSeq int64
+}
+
 func (r *BufferedRand) Generate() int64 {
-	init := func() {
-		if _, err := r.b.Read(r.c[:]); err != nil {
-			panic(err)
-		}
-		atomic.StoreInt64(&r.a, int64(len(r.c)))
-	}
-	r.o.Do(func() {
+	r.init.Do(func() {
 		// 0.3 ns slower
-		r.b = bufio.NewReader(crand.Reader)
-		init()
+		r.reader = bufio.NewReaderSize(crand.Reader, len(r.buffer)*2)
+		r.fillBuffer()
 	})
 	for {
-		ptr := atomic.AddInt64(&r.a, -8)
-		if ptr < 0 {
-			if ptr == -8 {
-				init()
+		waitSign := atomic.LoadInt64(&r.refSeq)
+		waitChan := r.refCh
+		headPtr := atomic.AddInt64(&r.head, -8)
+		if headPtr < 0 {
+			if headPtr == -8 {
+				r.mux.Lock()
+				r.fillBuffer()
+				r.mux.Unlock()
+				continue
 			}
+			if atomic.LoadInt64(&r.refSeq) != waitSign {
+				continue
+			}
+			<-waitChan
 			continue
 		}
-		ptri := int(ptr) % (len(r.c) - 8)
-		return int64(binary.LittleEndian.Uint64(r.c[ptri : ptri+8]))
+		r.mux.RLock()
+		ptri := int(headPtr) % (len(r.buffer) - 8)
+		result := binary.LittleEndian.Uint64(r.buffer[ptri : ptri+8])
+		r.mux.RUnlock()
+		return int64(result)
 	}
+}
+
+func (r *BufferedRand) fillBuffer() {
+	if _, err := r.reader.Read(r.buffer[:]); err != nil {
+		panic(err)
+	}
+	atomic.StoreInt64(&r.head, int64(len(r.buffer)))
+	atomic.AddInt64(&r.refSeq, 1)
+	ch := r.refCh
+	r.refCh = make(chan struct{})
+	if ch != nil {
+		close(ch)
+	}
+}
+
+type LightRand struct {
+	b [8]byte
+	o sync.Once
+	r io.Reader
+}
+
+func (r *LightRand) Generate() int64 {
+	r.o.Do(func() {
+		r.r = bufio.NewReader(crand.Reader)
+	})
+	_, err := r.r.Read(r.b[:])
+	if err != nil {
+		panic(err)
+	}
+	return int64(binary.LittleEndian.Uint64(r.b[:]))
 }

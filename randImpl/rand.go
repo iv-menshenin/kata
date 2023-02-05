@@ -10,6 +10,7 @@ import (
 	mrand "math/rand"
 	"sync"
 	"sync/atomic"
+	"unsafe"
 )
 
 type (
@@ -41,6 +42,7 @@ type BufferedRand struct {
 	buffer [4096]byte
 
 	refCh  chan struct{}
+	refMb  unsafe.Pointer
 	refSeq int64
 }
 
@@ -60,13 +62,11 @@ func (r *BufferedRand) Generate() int64 {
 				r.mux.Unlock()
 				continue
 			}
-			r.mux.RLock()
-			waitChan := r.refCh
-			r.mux.RUnlock()
+			waitChan := (*chan struct{})(atomic.LoadPointer(&r.refMb))
 			if atomic.LoadInt64(&r.refSeq) != waitSign {
 				continue
 			}
-			<-waitChan
+			<-*waitChan
 			continue
 		}
 		r.mux.RLock()
@@ -82,9 +82,11 @@ func (r *BufferedRand) fillBuffer() {
 		panic(err)
 	}
 	atomic.StoreInt64(&r.head, int64(len(r.buffer)))
+	var newChan = make(chan struct{})
 	atomic.AddInt64(&r.refSeq, 1)
+	atomic.StorePointer(&r.refMb, unsafe.Pointer(&newChan))
 	ch := r.refCh
-	r.refCh = make(chan struct{})
+	r.refCh = newChan
 	if ch != nil {
 		close(ch)
 	}

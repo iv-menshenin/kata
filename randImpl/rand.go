@@ -38,10 +38,8 @@ type BufferedRand struct {
 
 	mux    sync.RWMutex
 	head   int64
-	block  int64
 	buffer [4096]byte
 
-	refCh  chan struct{}
 	refMb  unsafe.Pointer
 	refSeq int64
 }
@@ -84,11 +82,10 @@ func (r *BufferedRand) fillBuffer() {
 	atomic.StoreInt64(&r.head, int64(len(r.buffer)))
 	var newChan = make(chan struct{})
 	atomic.AddInt64(&r.refSeq, 1)
+	waitChan := (*chan struct{})(atomic.LoadPointer(&r.refMb))
 	atomic.StorePointer(&r.refMb, unsafe.Pointer(&newChan))
-	ch := r.refCh
-	r.refCh = newChan
-	if ch != nil {
-		close(ch)
+	if waitChan != nil {
+		close(*waitChan)
 	}
 }
 

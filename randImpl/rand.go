@@ -37,7 +37,8 @@ type BufferedRand struct {
 
 	mux    sync.RWMutex
 	head   int64
-	buffer [16384]byte
+	block  int64
+	buffer [4096]byte
 
 	refCh  chan struct{}
 	refSeq int64
@@ -51,7 +52,6 @@ func (r *BufferedRand) Generate() int64 {
 	})
 	for {
 		waitSign := atomic.LoadInt64(&r.refSeq)
-		waitChan := r.refCh
 		headPtr := atomic.AddInt64(&r.head, -8)
 		if headPtr < 0 {
 			if headPtr == -8 {
@@ -60,6 +60,9 @@ func (r *BufferedRand) Generate() int64 {
 				r.mux.Unlock()
 				continue
 			}
+			r.mux.RLock()
+			waitChan := r.refCh
+			r.mux.RUnlock()
 			if atomic.LoadInt64(&r.refSeq) != waitSign {
 				continue
 			}

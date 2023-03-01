@@ -46,14 +46,6 @@ func (s *scroller) init() bool {
 	return true
 }
 
-func (s *scroller) isLast() bool {
-	return s.pos == len(s.nums)-1
-}
-
-func (s *scroller) isFirst() bool {
-	return s.pos == 0
-}
-
 func (s *scroller) next() bool {
 	s.last = s.num
 	s.pos++

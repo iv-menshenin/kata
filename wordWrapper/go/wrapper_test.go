@@ -1,4 +1,4 @@
-package wrapper
+package _go
 
 import (
 	"reflect"

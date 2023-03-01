@@ -90,7 +90,7 @@ func (c *calculator) putBonus(b int) {
 	c.bonusStack = append(c.bonusStack, b)
 }
 
-func (f gameFrame) frameBonus() bonus {
+func (f *gameFrame) frameBonus() bonus {
 	switch true {
 	case f.isSpare():
 		return spare

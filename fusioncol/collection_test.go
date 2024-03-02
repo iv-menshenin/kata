@@ -108,8 +108,6 @@ func BenchmarkFusionCollectionAppendGet(b *testing.B) {
 	var c Collection[Elem]
 	for n := 0; n < b.N; n++ {
 		c.Append(Elem{n: n})
-	}
-	for n := 0; n < b.N; n++ {
 		_ = c.Get(n)
 	}
 }

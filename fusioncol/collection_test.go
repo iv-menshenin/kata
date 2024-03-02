@@ -47,10 +47,18 @@ func TestFusionCollection(t *testing.T) {
 			c.Append(Elem{i: n, s: strconv.Itoa(n)})
 		}
 
+		// forward
 		for n := 0; n < elemCount; n++ {
 			e := c.Get(n)
 			require.Equal(t, n, e.i)
 			require.Equal(t, strconv.Itoa(n), e.s)
+		}
+
+		// backward
+		for n := elemCount; n > 0; n-- {
+			e := c.Get(n - 1)
+			require.Equal(t, n-1, e.i)
+			require.Equal(t, strconv.Itoa(n-1), e.s)
 		}
 	})
 }
@@ -127,6 +135,35 @@ func BenchmarkFusionCollectionGet(b *testing.B) {
 			_ = c.Get(max / 2)
 		}
 	})
+	b.Run("Forward", func(b *testing.B) {
+		b.ReportAllocs()
+		for n := 0; n < b.N; n++ {
+			_ = c.Get(n % max)
+		}
+	})
+	b.Run("Backward", func(b *testing.B) {
+		b.ReportAllocs()
+		for n := 0; n < b.N; n++ {
+			_ = c.Get(max - (n % max) - 1)
+		}
+	})
+	b.Run("Random", func(b *testing.B) {
+		b.ReportAllocs()
+		for n := 0; n < b.N; n++ {
+			switch n % 5 {
+			case 0:
+				_ = c.Get(max / 2)
+			case 1:
+				_ = c.Get(n % max)
+			case 2:
+				_ = c.Get(max - (max / 4))
+			case 3:
+				_ = c.Get(max - (n % max) - 1)
+			case 4:
+				_ = c.Get(max / 4)
+			}
+		}
+	})
 }
 
 func BenchmarkFusionCollectionPushPop(b *testing.B) {
@@ -135,17 +172,35 @@ func BenchmarkFusionCollectionPushPop(b *testing.B) {
 		a, b, c, d int64
 		n          int
 	}
-	b.Run("AfterAll", func(b *testing.B) {
+	b.Run("PushAll", func(b *testing.B) {
 		b.ReportAllocs()
 		var c Collection[Elem]
 		for n := 0; n < b.N; n++ {
 			c.Push(Elem{n: n})
 		}
+	})
+	b.Run("2Push1Pop", func(b *testing.B) {
+		b.ReportAllocs()
+		var c Collection[Elem]
+		for n := 0; n < b.N; n++ {
+			c.Push(Elem{n: n})
+			if n%2 == 0 {
+				_ = c.Pop()
+			}
+		}
+	})
+	b.Run("PopAll", func(b *testing.B) {
+		b.ReportAllocs()
+		var c Collection[Elem]
+		for n := 0; n < b.N; n++ {
+			c.Push(Elem{n: n})
+		}
+		b.ResetTimer()
 		for n := 0; n < b.N; n++ {
 			_ = c.Pop()
 		}
 	})
-	b.Run("AfterEach", func(b *testing.B) {
+	b.Run("PushThenPop", func(b *testing.B) {
 		b.ReportAllocs()
 		var c Collection[Elem]
 		for n := 0; n < b.N; n++ {

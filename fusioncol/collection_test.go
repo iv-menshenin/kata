@@ -98,22 +98,7 @@ func TestFusionCollectionPushPop(t *testing.T) {
 	})
 }
 
-func BenchmarkFusionCollectionAppendGet(b *testing.B) {
-	b.ReportAllocs()
-	type Elem struct {
-		s          string
-		a, b, c, d int64
-		n          int
-	}
-	var c Collection[Elem]
-	for n := 0; n < b.N; n++ {
-		c.Append(Elem{n: n})
-		_ = c.Get(n)
-	}
-}
-
 func BenchmarkFusionCollectionGet(b *testing.B) {
-	b.ReportAllocs()
 	type Elem struct {
 		s          string
 		a, b, c, d int64
@@ -124,24 +109,48 @@ func BenchmarkFusionCollectionGet(b *testing.B) {
 	for n := 0; n < max; n++ {
 		c.Append(Elem{n: n})
 	}
-	b.ResetTimer()
-	for n := 0; n < b.N; n++ {
-		_ = c.Get(n % max)
-	}
+	b.Run("Last", func(b *testing.B) {
+		b.ReportAllocs()
+		for n := 0; n < b.N; n++ {
+			_ = c.Get(max - 1)
+		}
+	})
+	b.Run("First", func(b *testing.B) {
+		b.ReportAllocs()
+		for n := 0; n < b.N; n++ {
+			_ = c.Get(1)
+		}
+	})
+	b.Run("Mid", func(b *testing.B) {
+		b.ReportAllocs()
+		for n := 0; n < b.N; n++ {
+			_ = c.Get(max / 2)
+		}
+	})
 }
 
 func BenchmarkFusionCollectionPushPop(b *testing.B) {
-	b.ReportAllocs()
 	type Elem struct {
 		s          string
 		a, b, c, d int64
 		n          int
 	}
-	var c Collection[Elem]
-	for n := 0; n < b.N; n++ {
-		c.Push(Elem{n: n})
-	}
-	for n := 0; n < b.N; n++ {
-		_ = c.Pop()
-	}
+	b.Run("AfterAll", func(b *testing.B) {
+		b.ReportAllocs()
+		var c Collection[Elem]
+		for n := 0; n < b.N; n++ {
+			c.Push(Elem{n: n})
+		}
+		for n := 0; n < b.N; n++ {
+			_ = c.Pop()
+		}
+	})
+	b.Run("AfterEach", func(b *testing.B) {
+		b.ReportAllocs()
+		var c Collection[Elem]
+		for n := 0; n < b.N; n++ {
+			c.Push(Elem{n: n})
+			_ = c.Pop()
+		}
+	})
 }

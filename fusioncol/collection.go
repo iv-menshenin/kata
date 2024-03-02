@@ -20,17 +20,21 @@ func (c *Collection[T]) Get(i int) *T {
 	if i > c.count-1 {
 		panic(ErrOutOfBounds{i: i, l: c.count})
 	}
-	if c.fcptr != nil && i >= c.fcidx && i-c.fcidx < c.fcptr.count {
-		return &c.fcptr.cont[i-c.fcidx]
-	}
 	var cur = c.last
 	var x = c.count
+	if c.fcptr != nil && i < c.fcidx {
+		if ii := c.fcidx - c.fcptr.count; i >= ii {
+			return &c.fcptr.cont[i-ii]
+		}
+		cur = c.fcptr
+		x = c.fcidx
+	}
 	for cur != nil && x-cur.count > i {
 		x -= cur.count
 		cur = cur.prev
 	}
 	c.fcptr = cur
-	c.fcidx = x - cur.count
+	c.fcidx = x
 	return &cur.cont[i-(x-cur.count)]
 }
 
@@ -100,7 +104,9 @@ func (c *Collection[T]) newBucket() *bucket[T] {
 		c.cache = make([]bucket[T], 1, bucketsCache)
 	}
 	var b = &c.cache[len(c.cache)-1]
-	b.cont = make([]T, 0, c.sz())
+	if cap(b.cont) == 0 {
+		b.cont = make([]T, 0, c.sz())
+	}
 	return b
 }
 
@@ -128,5 +134,17 @@ func (c *Collection[T]) removeLast() {
 	if c.fcptr == c.last {
 		c.fcptr = nil
 	}
+	removed := c.last
 	c.last = c.last.prev
+	if l, v := len(c.cache), cap(c.cache); l < v {
+		c.cache = c.cache[:v]
+		// keep already allocated cont in cache
+		for i := l; i < v; i++ {
+			if c.cache[i].cont == nil {
+				c.cache[i] = *removed
+				break
+			}
+		}
+		c.cache = c.cache[:l]
+	}
 }

@@ -5,6 +5,9 @@ type (
 		count int
 		last  *bucket[T]
 		cache []bucket[T]
+
+		fcidx int
+		fcptr *bucket[T]
 	}
 	bucket[T any] struct {
 		count int
@@ -17,12 +20,17 @@ func (c *Collection[T]) Get(i int) *T {
 	if i > c.count-1 {
 		panic(ErrOutOfBounds{i: i, l: c.count})
 	}
+	if c.fcptr != nil && i >= c.fcidx && i-c.fcidx < c.fcptr.count {
+		return &c.fcptr.cont[i-c.fcidx]
+	}
 	var cur = c.last
 	var x = c.count
-	for cur != nil && x > i+cur.count {
+	for cur != nil && x-cur.count > i {
 		x -= cur.count
 		cur = cur.prev
 	}
+	c.fcptr = cur
+	c.fcidx = x - cur.count
 	return &cur.cont[i-(x-cur.count)]
 }
 
@@ -116,6 +124,9 @@ func (c *Collection[T]) removeLast() {
 	}
 	if c.last.count > 0 {
 		panic("remove nonempty bucket")
+	}
+	if c.fcptr == c.last {
+		c.fcptr = nil
 	}
 	c.last = c.last.prev
 }

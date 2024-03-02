@@ -154,3 +154,18 @@ func BenchmarkFusionCollectionPushPop(b *testing.B) {
 		}
 	})
 }
+
+func BenchmarkFusionCollectionInsert(b *testing.B) {
+	b.Run("Append", func(b *testing.B) {
+		b.ReportAllocs()
+		type Elem struct {
+			s          string
+			a, b, c, d int64
+			n          int
+		}
+		var c Collection[Elem]
+		for n := 0; n < b.N; n++ {
+			c.Append(Elem{n: n})
+		}
+	})
+}

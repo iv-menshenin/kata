@@ -112,6 +112,24 @@ func BenchmarkFusionCollectionAppendGet(b *testing.B) {
 	}
 }
 
+func BenchmarkFusionCollectionGet(b *testing.B) {
+	b.ReportAllocs()
+	type Elem struct {
+		s          string
+		a, b, c, d int64
+		n          int
+	}
+	var c Collection[Elem]
+	const max = 1000000
+	for n := 0; n < max; n++ {
+		c.Append(Elem{n: n})
+	}
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		_ = c.Get(n % max)
+	}
+}
+
 func BenchmarkFusionCollectionPushPop(b *testing.B) {
 	b.ReportAllocs()
 	type Elem struct {

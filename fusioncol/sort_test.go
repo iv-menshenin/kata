@@ -31,7 +31,7 @@ func TestSortable(t *testing.T) {
 			require.Equal(t, n, *c.Get(n))
 		}
 	})
-	t.Run("Sort10", func(t *testing.T) {
+	t.Run("Sort1Mln", func(t *testing.T) {
 		t.Parallel()
 		var c Collection[int]
 		s := Sortable(&c, func(i *int, j *int) bool {

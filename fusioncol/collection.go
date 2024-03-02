@@ -98,15 +98,17 @@ const (
 )
 
 func (c *Collection[T]) newBucket() *bucket[T] {
-	if len(c.cache) < cap(c.cache) {
-		c.cache = c.cache[:len(c.cache)+1]
-	} else {
-		c.cache = make([]bucket[T], 1, bucketsCache)
+	if len(c.cache) == 0 {
+		c.cache = make([]bucket[T], bucketsCache)
 	}
-	var b = &c.cache[len(c.cache)-1]
+	var (
+		l = len(c.cache) - 1
+		b = &c.cache[l]
+	)
 	if cap(b.cont) == 0 {
 		b.cont = make([]T, 0, c.sz())
 	}
+	c.cache = c.cache[:l]
 	return b
 }
 
@@ -136,15 +138,12 @@ func (c *Collection[T]) removeLast() {
 	}
 	removed := c.last
 	c.last = c.last.prev
-	if l, v := len(c.cache), cap(c.cache); l < v {
-		c.cache = c.cache[:v]
-		// keep already allocated cont in cache
-		for i := l; i < v; i++ {
-			if c.cache[i].cont == nil {
-				c.cache[i] = *removed
-				break
-			}
+	// keep already allocated cont in cache
+	for i := len(c.cache); i > 0; {
+		i--
+		if c.cache[i].cont == nil {
+			c.cache[i] = *removed
+			break
 		}
-		c.cache = c.cache[:l]
 	}
 }

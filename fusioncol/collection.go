@@ -3,14 +3,13 @@ package fusioncol
 type (
 	Collection[T any] struct {
 		count int
-		first *bucket[T]
 		last  *bucket[T]
 		cache []bucket[T]
 	}
 	bucket[T any] struct {
 		count int
 		cont  []T
-		next  *bucket[T]
+		prev  *bucket[T]
 	}
 )
 
@@ -18,13 +17,13 @@ func (c *Collection[T]) Get(i int) *T {
 	if i > c.count-1 {
 		panic(ErrOutOfBounds{i: i, l: c.count})
 	}
-	var cur = c.first
-	var x = i
-	for cur != nil && x >= cur.count {
+	var cur = c.last
+	var x = c.count
+	for cur != nil && x > i+cur.count {
 		x -= cur.count
-		cur = cur.next
+		cur = cur.prev
 	}
-	return &cur.cont[x]
+	return &cur.cont[i-(x-cur.count)]
 }
 
 func (c *Collection[T]) Pop() T {
@@ -72,12 +71,12 @@ func (c *Collection[T]) capable() bool {
 
 func (c *Collection[T]) extend() {
 	if c.last == nil {
-		c.first = c.newBucket()
-		c.last = c.first
+		c.last = c.newBucket()
 		return
 	}
-	c.last.next = c.newBucket()
-	c.last = c.last.next
+	n := c.newBucket()
+	n.prev = c.last
+	c.last = n
 }
 
 const (
@@ -118,21 +117,5 @@ func (c *Collection[T]) removeLast() {
 	if c.last.count > 0 {
 		panic("remove nonempty bucket")
 	}
-	if c.first.next == nil {
-		c.last = nil
-		c.first = nil
-		if c.count > 0 {
-			panic("remove first bucket in nonempty collection")
-		}
-	}
-	var cur = c.first
-	for {
-		if cur.next.next == nil {
-			cur.next = nil
-			c.last = cur
-			break
-		}
-		cur = cur.next
-	}
-	c.last.next = nil
+	c.last = c.last.prev
 }

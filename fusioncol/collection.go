@@ -3,14 +3,16 @@ package fusioncol
 type (
 	Collection[T any] struct {
 		count int
-		first *bucket[T]
 		last  *bucket[T]
 		cache []bucket[T]
+
+		fcidx int
+		fcptr *bucket[T]
 	}
 	bucket[T any] struct {
 		count int
 		cont  []T
-		next  *bucket[T]
+		prev  *bucket[T]
 	}
 )
 
@@ -18,13 +20,22 @@ func (c *Collection[T]) Get(i int) *T {
 	if i > c.count-1 {
 		panic(ErrOutOfBounds{i: i, l: c.count})
 	}
-	var cur = c.first
-	var x = i
-	for cur != nil && x >= cur.count {
-		x -= cur.count
-		cur = cur.next
+	var cur = c.last
+	var x = c.count
+	if c.fcptr != nil && i < c.fcidx {
+		if ii := c.fcidx - c.fcptr.count; i >= ii {
+			return &c.fcptr.cont[i-ii]
+		}
+		cur = c.fcptr
+		x = c.fcidx
 	}
-	return &cur.cont[x]
+	for cur != nil && x-cur.count > i {
+		x -= cur.count
+		cur = cur.prev
+	}
+	c.fcptr = cur
+	c.fcidx = x
+	return &cur.cont[i-(x-cur.count)]
 }
 
 func (c *Collection[T]) Pop() T {
@@ -72,12 +83,12 @@ func (c *Collection[T]) capable() bool {
 
 func (c *Collection[T]) extend() {
 	if c.last == nil {
-		c.first = c.newBucket()
-		c.last = c.first
+		c.last = c.newBucket()
 		return
 	}
-	c.last.next = c.newBucket()
-	c.last = c.last.next
+	n := c.newBucket()
+	n.prev = c.last
+	c.last = n
 }
 
 const (
@@ -93,7 +104,9 @@ func (c *Collection[T]) newBucket() *bucket[T] {
 		c.cache = make([]bucket[T], 1, bucketsCache)
 	}
 	var b = &c.cache[len(c.cache)-1]
-	b.cont = make([]T, 0, c.sz())
+	if cap(b.cont) == 0 {
+		b.cont = make([]T, 0, c.sz())
+	}
 	return b
 }
 
@@ -118,21 +131,20 @@ func (c *Collection[T]) removeLast() {
 	if c.last.count > 0 {
 		panic("remove nonempty bucket")
 	}
-	if c.first.next == nil {
-		c.last = nil
-		c.first = nil
-		if c.count > 0 {
-			panic("remove first bucket in nonempty collection")
-		}
+	if c.fcptr == c.last {
+		c.fcptr = nil
 	}
-	var cur = c.first
-	for {
-		if cur.next.next == nil {
-			cur.next = nil
-			c.last = cur
-			break
+	removed := c.last
+	c.last = c.last.prev
+	if l, v := len(c.cache), cap(c.cache); l < v {
+		c.cache = c.cache[:v]
+		// keep already allocated cont in cache
+		for i := l; i < v; i++ {
+			if c.cache[i].cont == nil {
+				c.cache[i] = *removed
+				break
+			}
 		}
-		cur = cur.next
+		c.cache = c.cache[:l]
 	}
-	c.last.next = nil
 }

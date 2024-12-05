@@ -91,7 +91,7 @@ main.go:37:13: arr does not escape
 main.go:38:15: make(map[int]struct {}, len(arr)) does not escape
 main.go:53:15: arr does not escape
 ```
-
+ 
 Do you see that on line 23, the data escape into a heap? That was my mistake.
 The implementation with an array of 1001 elements showed better results, which is not surprising at all,
 because its cyclomatic complexity is O(n) and there are no allocations and all data are on the stack.
